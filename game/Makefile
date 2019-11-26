@@ -28,7 +28,7 @@ DUMMY_OBJ = AIDummy.o
 BOARD_OBJ = Board.o
 
 # Add here any extra .o player files you want to link to the executable
-EXTRA_OBJS =
+EXTRA_OBJS = AIMat34.o
 
 # Config
 OPTIMIZE = 2 # Optimization level (0 to 3)
@@ -63,17 +63,17 @@ LDFLAGS  = -std=c++11 -lm $(ARCHFLAGS) $(PROFILEFLAGS) $(DEBUGFLAGS) -O$(strip $
 
 # Rules
 
-all: Game 
+all: Game
 
 clean:
 	rm -rf Game SecGame *.o *.exe Makefile.deps
 
 # Order of objects is important here to deactivate standard sleep function.
 
-Game: Structs.o Settings.o State.o Info.o Random.o Board.o Action.o Player.o Registry.o Game.o Main.o $(PLAYERS_OBJ) $(BOARD_OBJ) Utils.o 
+Game: Structs.o Settings.o State.o Info.o Random.o Board.o Action.o Player.o Registry.o Game.o Main.o $(PLAYERS_OBJ) $(BOARD_OBJ) Utils.o
 	$(CXX) $^ -o $@ $(LDFLAGS)
 
-SecGame: Structs.o Settings.o State.o Info.o Random.o Board.o Action.o Player.o Registry.o SecGame.o SecMain.o Utils.o 
+SecGame: Structs.o Settings.o State.o Info.o Random.o Board.o Action.o Player.o Registry.o SecGame.o SecMain.o Utils.o
 	$(CXX) $^ -o $@ $(LDFLAGS) -lrt
 
 %.exe: %.o Structs.o Settings.o State.o Info.o Random.o Board.o Action.o Player.o Registry.o SecGame.o SecMain.o Utils.o
