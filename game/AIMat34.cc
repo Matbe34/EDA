@@ -26,80 +26,140 @@ struct PLAYER_NAME : public Player {
    typedef vector<vector<char> > Matrix;
    vector<int> W = wizards(me());
    vector<int> D = dwarves(me());
-   Pos obj_dwarve;
-   Pos obj_wizzard;
+   vector<pair<int,Pos> > DwP; //vector amb parell de id i pos de cada dwarve
+   vector<Pos> tresors; //vector on estan les posicions dels tresors
+   Pos obj_dwarve; //objectiu dels dwarves
+   Pos obj_wizzard; //objectiu dels mags
+
+   //retorna una posicio fet el moviment indicat: 0 = UP, 1 = RIGHT, 2 = DOWN, 3 = LEFT
+   Pos mou(Pos a, int s){
+     switch (s){
+       case 0: --a.i; break;
+       case 2: ++a.i; break;
+       case 3: --a.j; break;
+       case 1: ++a.j; break;
+       default: ;
+     }
+     return a;
+   }
 
    //actualitza els vector d'id's de mags i dwarves
    void actualitza_w_i_d(){
      W = wizards(me());
      D = dwarves(me());
+     int n = D.size();
+     DwP.clear();
+     for(int i = 0; i < n; ++i)DwP.push_back(make_pair(D[i],unit(D[i]).pos));
    }
 
-   //Omple el tauler segons Moria. Amb punts, X i t's.
-   void omple_Tes(Matrix& Tes){
-     for(int i = 1; i < 61; ++i){
-       for(int j = 1; j < 61; ++j){
-         Pos a (i-1,j-1);
-         if(cell(a).treasure)Tes[i][j] = 't';
-         else if(cell(a).type != Granite and cell(a).type != Abyss)Tes[i][j] = '.';
-       }
-     }
+   void printset(const set<Pos>& s){
+     set<Pos>::iterator it;
+     for(it = s.begin(); it != s.end(); ++it)cout << (*it).i << "," << (*it).j << " ";
+     cout << endl;
    }
-   //Retorna el tresor més proper a la posició a tenint en compte el granit i els abismes --> WORKING
-   Pos bfs_tresors(Pos a, Matrix Tes){
-     int x = a.i;
-     int y = a.j;
-     queue<pair<int,int> > q;
-     q.push(make_pair(x,y));
-     while(!q.empty()){
-       if(Tes[(q.front().first)][(q.front().second)] == '.'){
-         Tes[q.front().first][q.front().second] = 'X';
-         q.push(make_pair(q.front().first,q.front().second+1));
-         q.push(make_pair(q.front().first,q.front().second-1));
-         q.push(make_pair(q.front().first-1,q.front().second));
-         q.push(make_pair(q.front().first+1,q.front().second));
-         q.pop();
+
+   //Troba tots els tresors inicials i els posa la seva posició al vector tresors --> eficient
+   void bfs_tresors(Pos a){
+     int cont =0;
+     queue<Pos> q;
+     q.push(a);
+     set<Pos> s;
+     s.insert(q.front());
+     while(not q.empty() and tresors.size() < 20){
+       Pos aux = q.front();
+       if(cell(aux).treasure)tresors.push_back(aux);
+
+       else {
+         if(s.find(mou(aux,1)) == s.end() and pos_ok(mou(aux,1))) {q.push(mou(aux,1)); s.insert(mou(aux,1));}
+         if(s.find(mou(aux,2)) == s.end() and pos_ok(mou(aux,2))) {q.push(mou(aux,2)); s.insert(mou(aux,2));}
+         if(s.find(mou(aux,3)) == s.end() and pos_ok(mou(aux,3))) {q.push(mou(aux,3)); s.insert(mou(aux,3));}
+         if(s.find(mou(aux,4)) == s.end() and pos_ok(mou(aux,4))) {q.push(mou(aux,4)); s.insert(mou(aux,4));}
        }
-       else if(Tes[q.front().first][q.front().second] == 't'){
-         Pos aux;
-         aux.i = q.front().first;
-         aux.j = q.front().second;
-         return aux;
-       }
-       else q.pop();
+       q.pop();
      }
-     return a;
    }
 
    //retorna true si el dwarf amb id id es meu
    bool mine(int id){
      int n = D.size();
+     int m = W.size();
      for(int i = 0; i < n; ++i)
        if(D[i] == id)return true;
+     for(int i = 0; i < m; ++i)
+       if(W[i] == id)return true;
      return false;
    }
 
+   //retorna la distancia entre a i b
+   int dist_min(Pos a, Pos b){
+     return abs(a.i - b.i) + abs(a.j - b.j);
+   }
+
+   //retorna la posicio del tresor mes proper a a
+   Pos tresor_proper(Pos a){
+     int n = tresors.size();
+     Pos fi = tresors[0];
+     int min = dist_min(a,tresors[0]);
+     for(int i = 1; i < n; ++i){
+       int aux = dist_min(a,tresors[i]);
+       if(aux < min){
+         min = aux;
+         fi = tresors[i];
+       }
+     }
+     return fi;
+   }
+
+   //retorna la posicio del dwarve mes proper a a
    Pos bfs_dwarves(Pos a){
-     queue<Pos> q;
-     q.push(a);
-     set<Pos> s;
-     while(not q.empty()){
-       int nid = cell(q.front()).id;
-       if(nid != -1 and mine(nid)) return q.front();
-       else {
-         s.insert(q.front());
-         if(s.find(Pos(q.front().i,q.front().j+1)) == s.end() and q.front().j+1 < 60)q.push(Pos(q.front().i,q.front().j+1));
-         if(s.find(Pos(q.front().i,q.front().j-1)) == s.end() and q.front().j-1 >= 0)q.push(Pos(q.front().i,q.front().j-1));
-         if(s.find(Pos(q.front().i-1,q.front().j)) == s.end() and q.front().i-1 >= 0)q.push(Pos(q.front().i-1,q.front().j));
-         if(s.find(Pos(q.front().i+1,q.front().j)) == s.end() and q.front().i+1 < 60)q.push(Pos(q.front().i+1,q.front().j));
-         q.pop();
+     int n = DwP.size();
+     int min = dist_min(a,DwP[0].second);
+     Pos fi = DwP[0].second;
+     for(int i = 1; i < n; ++i){
+       int aux = dist_min(a,DwP[i].second);
+       if(aux < min) {
+         min = aux;
+         fi = DwP[i].second;
+       }
+     }
+     return fi;
+   }
+
+   //posa b a true si tenim enemics a menys de 2 caselles i retorna la pos de l'enemic més proper o la propia
+   Pos check_enemics(Pos a, bool& b){
+     int i,j,lim1,lim2;
+     if(a.i > 1)i = a.i - 2;
+     else i = 0;
+     if(a.j > 1)j = a.j - 2;
+     else j = 0;
+     if(a.i < 59)lim1 = a.i + 2;
+     else lim1 = 60;
+     if(a.j < 59)lim2 = a.j + 2;
+     else lim2 = 60;
+     for(int p = i; p < lim1; ++p){
+       for(int q = j; q < lim2; ++q){
+         if(cell(Pos(p,q)).id != -1 and not mine(cell(Pos(p,q)).id)){
+           b = true;
+           return Pos(p,q);
+         }
        }
      }
      return a;
    }
 
-   void check_enemics(Pos a){
-     if(1){}
+   //retorna cert si tenim el balrog aprop
+   bool balrog(){
+     return false;
+   }
+
+   //ens allunyem del balrog
+   void escape_balrog(Pos a){
+     if(unit(cell(a).id).type == Dwarf){
+       //escape dwarf
+     }
+     else{
+       //escape wizzard
+     }
    }
 
    //mou dwarve cap a la posicio a
@@ -109,9 +169,9 @@ struct PLAYER_NAME : public Player {
      else if(a.i > init.i and a.j < init.j) command(id,Dir(7));
      else if(a.i < init.i and a.j > init.j) command(id,Dir(3));
      else if(a.i > init.i and a.j > init.j) command(id,Dir(1));
-     else if(a.j < init.j) command(id,Dir(4));
-     else if(a.j > init.j) command(id,Dir(2));
      else if(a.j < init.j) command(id,Dir(6));
+     else if(a.j > init.j) command(id,Dir(2));
+     else if(a.i < init.i) command(id,Dir(4));
      else if(a.i > init.i) command(id,Dir(0));
      else command(id,Dir(1));
    }
@@ -126,25 +186,66 @@ struct PLAYER_NAME : public Player {
      else command(id,Dir(0));
    }
 
+   //Dwarve s'allunya de la posicio a ja que hi ha un enemic
+   void run_dwarve(int id, Pos a){
+     Pos init = unit(id).pos;
+     if(a.i < init.i and a.j < init.j) command(id,Dir(1));
+     else if(a.i > init.i and a.j < init.j) command(id,Dir(3));
+     else if(a.i < init.i and a.j > init.j) command(id,Dir(7));
+     else if(a.i > init.i and a.j > init.j) command(id,Dir(5));
+     else if(a.j < init.j) command(id,Dir(2));
+     else if(a.j > init.j) command(id,Dir(6));
+     else if(a.i < init.i) command(id,Dir(0));
+     else if(a.i > init.i) command(id,Dir(4));// 4 2 0 6
+     else command(id,Dir(3));
+   }
+
+   //Wizzard s'allunya de la posicio a ja que hi ha un enemic
+   void run_wizzard(int id, Pos a){
+     Pos init = unit(id).pos;
+     if(a.i > init.i) command(id,Dir(4));
+     else if(a.i < init.i) command(id,Dir(0));
+     else if(a.j > init.j) command(id,Dir(6));
+     else if(a.j < init.j) command(id,Dir(2));
+     else command(id,Dir(4));
+   }
+
    //Els dwarves es mouen cap als tresors mes propers tenint en compte parets i abismes nomes.
-   void move_dwarves(Matrix& Tes){
+   void move_dwarves(){
      vector<int> D = dwarves(me());
      int n = D.size();
      for(int i = 0; i < n; ++i){
        int id = D[i];
-       if(round()%5 == 0)obj_dwarve = bfs_tresors(unit(id).pos, Tes); //tresor més proper a id
-       move_dwarve(id,obj_dwarve); //movem id cap a a
+       if(balrog())escape_balrog(unit(id).pos); //primer fugim del balrog
+       else{
+         bool b = false;
+         Pos enem = check_enemics(unit(id).pos, b);
+         if(b)run_dwarve(id,enem); //fugim de l'enemic
+         else{
+           obj_dwarve = tresor_proper(unit(id).pos); //tresor més proper a id
+           move_dwarve(id,obj_dwarve); //movem id cap a a
+         }
+       }
      }
    }
 
+   //els wizzards es mouen cap al dwarve mes proper. (maybe xoquen amb parets i/o roques?)
    void move_wizards(){
      vector<int> W = wizards(me());
      int n = W.size();
      //s'han de moure cap el dwarve mes proper per curar-lo
      for(int i = 0; i < n; ++i){
        int id = W[i];
-       if(round()%15 == 0)obj_wizzard = bfs_dwarves(unit(id).pos);
-       move_wizzard(id,obj_wizzard);
+       if(balrog())escape_balrog(unit(id).pos); //primer fugim del balrog
+       else{
+         bool b = false;
+         Pos enem = check_enemics(unit(id).pos, b);
+         if(b)run_wizzard(id,enem); //fugim de l'enemic
+         else {
+           if(round()%10 == 0)obj_wizzard = bfs_dwarves(unit(id).pos); //dwarve mes proper
+           move_wizzard(id,obj_wizzard); //no hi ha enemics aprop
+         }
+       }
      }
    }
 
@@ -152,12 +253,9 @@ struct PLAYER_NAME : public Player {
    * Play method, invoked once per each round.
    */
   virtual void play () {
-    Matrix Tes(62, vector<char> (62,'X'));
-    if(round() == 0){
-      omple_Tes(Tes);
-    }
-    actualitza_w_i_d();
-    move_dwarves(Tes);
+    if(round() == 0)bfs_tresors(Pos(28,28)); //inicialitzem vector tresors
+    actualitza_w_i_d(); //actualitzem cantitat de dwarves i wizzards
+    move_dwarves();
     move_wizards();
   }
 
