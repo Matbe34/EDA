@@ -162,7 +162,7 @@ struct PLAYER_NAME : public Player {
      }
    }
 
-   //mou dwarve cap a la posicio a
+   //mou dwarve cap a la posicio a (falta evitar granit i abismes)
    void move_dwarve(int id, Pos a){
      Pos init = unit(id).pos;
      if(a.i < init.i and a.j < init.j) command(id,Dir(5));
@@ -176,7 +176,7 @@ struct PLAYER_NAME : public Player {
      else command(id,Dir(1));
    }
 
-   //mou wizzard cap a la posicio a
+   //mou wizzard cap a la posicio a (falta evitar granit i abismes)
    void move_wizzard(int id, Pos a){
      Pos init = unit(id).pos;
      if(a.i > init.i) command(id,Dir(0));
@@ -186,7 +186,7 @@ struct PLAYER_NAME : public Player {
      else command(id,Dir(0));
    }
 
-   //Dwarve s'allunya de la posicio a ja que hi ha un enemic
+   //Dwarve s'allunya de la posicio a ja que hi ha un enemic (falta evitar granit i abismes)
    void run_dwarve(int id, Pos a){
      Pos init = unit(id).pos;
      if(a.i < init.i and a.j < init.j) command(id,Dir(1));
@@ -200,7 +200,7 @@ struct PLAYER_NAME : public Player {
      else command(id,Dir(3));
    }
 
-   //Wizzard s'allunya de la posicio a ja que hi ha un enemic
+   //Wizzard s'allunya de la posicio a ja que hi ha un enemic (falta evitar granit i abismes)
    void run_wizzard(int id, Pos a){
      Pos init = unit(id).pos;
      if(a.i > init.i) command(id,Dir(4));
