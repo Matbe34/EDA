@@ -21,91 +21,103 @@ struct PLAYER_NAME : public Player {
   /**
    * Types and attributes for your player can be defined here.
    */
-   typedef vector<vector<bool> > Moria;
+   typedef vector<vector<bool> > Matrix;
    queue<Pos> q;
    vector<pair<int,Pos> > v_T;
 
-   static bool mesp(pair<int,Pos> a, pair<int,Pos> b){
-     return a.first < b.first;
+   void buida(){
+     for(int i = 0; i < q.size(); ++i)q.pop();
    }
 
    int calcdir(Pos init, Pos final){
-     if(init.j > final.j) return 4;
-     else if(init.j < final.j)return 0;
-     else if(init.i > final.i)return 6;
-     else if(init.i < final.i)return 2;
-     return 0;
+     // cout << init.i << "," << init.j << " " << final.i << "," << final.j << endl;
+     // getchar();
+     if(init.i > final.i) return 0;
+     else if(init.i < final.i)return 4;
+     else if(init.j > final.j)return 6;
+     else if(init.j < final.j)return 2;
+     return random(0, 7);
    }
 
-   Pos cerca_dicot(vector<pair<int,Pos> > v_T, int id, int l, int r){
-     if(l>r)return unit(id).pos;
-     else {
-       int m = (l+r)/2;
-       if(id < v_T[m].first)return cerca_dicot(v_T, id, l, m);
-       else if(id > v_T[m].first)return cerca_dicot(v_T, id, m+1, r);
-       else return v_T[m].second;
-     }
+   int calcdirdw(Pos init, Pos final){
+     // cout << init.i << "," << init.j << " " << final.i << "," << final.j << endl;
+     // getchar();
+     if(init.i > final.i and init.j > final.j) return 5;
+     if(init.i < final.i and init.j < final.j) return 1;
+     if(init.i < final.i and init.j > final.j) return 7;
+     if(init.i > final.i and init.j < final.j) return 3;
+     else if(init.i < final.i)return 4;
+     else if(init.j > final.j)return 6;
+     else if(init.j < final.j)return 2;
+     return random(0, 7);
    }
 
-   void bfs(Pos pos, int id){
+   Pos bfs(Matrix& M, Pos pos){
      q.push(pos);
-     Moria M(60, vector<bool> (60, false));
      while(not q.empty()){
-       if(/*cell(q.front()).type == Cave and */!M[q.front().operator+(Top).i][q.front().operator+(Top).j]){
-         M[q.front().i][q.front().j] = 1;
-         if(q.front().operator+(Top).i >= 0 and cell(q.front().operator+(Top)).owner != me() and !M[q.front().operator+(Top).i][q.front().operator+(Top).j])q.push(q.front().operator+(Top));
-         if(q.front().operator+(Bottom).i < 60  and cell(q.front().operator+(Bottom)).owner != me() and !M[q.front().operator+(Top).i][q.front().operator+(Top).j])q.push(q.front().operator+(Bottom));
-         if(q.front().operator+(Left).j >= 0 and cell(q.front().operator+(Left)).owner != me() and !M[q.front().operator+(Top).i][q.front().operator+(Top).j])q.push(q.front().operator+(Left));
-         if(q.front().operator+(Top).j < 60  and cell(q.front().operator+(Right)).owner != me() and !M[q.front().operator+(Top).i][q.front().operator+(Top).j])q.push(q.front().operator+(Right));
-         q.pop();
-       }
-       else if(cell(q.front()).type == Cave and cell(q.front()).treasure){
-         v_T.push_back(make_pair(id,q.front()));
-         break;
-       }
-       else q.pop();
+        if(!M[q.front().i][q.front().j]){
+          M[q.front().i][q.front().j] = true;
+          if(q.front().operator+(Top).i >= 0) q.push(q.front().operator+(Top));
+          if(q.front().operator+(Bottom).i < 60) q.push(q.front().operator+(Bottom));
+          if(q.front().operator+(Left).j >= 0) q.push(q.front().operator+(Left));
+          if(q.front().operator+(Right).j < 60) q.push(q.front().operator+(Right));
+          if(cell(q.front()).treasure)return q.front();
+          q.pop();
+        }
+        else q.pop();
      }
-   }
-
-   Pos tresor_mes_proper(int id){
-     Pos pos = unit(id).pos;
-     bfs(pos,id);
-     Pos aux = q.front();
-     q.pop();
-     return aux;
+     return pos;
    }
 
    void move_dwarves(){
      vector<int> D = dwarves(me());
      int n = D.size();
+     vector<Pos> found (n);
      for(int i = 0; i < n; ++i){
        int id = D[i];
        Pos pos = unit(id).pos;
-       bfs(pos,id);
-       sort(v_T.begin(),v_T.end()-1, mesp);
-       Pos aux = cerca_dicot(v_T, id, 0, 0);
-       int move = calcdir(pos,aux);
+       Pos aux;
+       if(operator==(found[i],aux)){
+         Matrix M(60, vector<bool>(60,false));
+         buida();
+         aux = bfs(M,pos);
+         found[i] = aux;
+       }
+       if(found[i] == pos){
+         Matrix M(60, vector<bool>(60,false));
+         buida();
+         aux = bfs(M,pos);
+         found[i] = aux;
+       }
+       aux = found[i];
+       int move = calcdirdw(pos,aux);
        command(id, Dir(move));
-
-
-      /* Pos aux = q.front();
-       int move = 0;
-       if(not q_T.empty()){
-         move = calcdir(pos,q_T.top().second); //calcdir de pos i cercadicot de id en q_T
-       }
-       else {
-         move = calcdir(pos, aux);
-         tresor_mes_proper(id);
-       }
-       command(id, Dir(move));*/
      }
    }
 
    void move_wizards(){
      vector<int> W = wizards(me());
      int n = W.size();
+     vector<Pos> found (n);
      for(int i = 0; i < n; ++i){
-       command(W[i], Dir(0));
+       int id = W[i];
+       Pos pos = unit(id).pos;
+       Pos aux;
+       if(operator==(found[i],aux)){
+         Matrix M(60, vector<bool>(60,false));
+         buida();
+         aux = bfs(M,pos);
+         found[i] = aux;
+       }
+       if(found[i] == pos){
+         Matrix M(60, vector<bool>(60,false));
+         buida();
+         aux = bfs(M,pos);
+         found[i] = aux;
+       }
+       aux = found[i];
+       int move = calcdir(pos,aux);
+       command(id, Dir(move));
      }
    }
 
