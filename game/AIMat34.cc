@@ -167,10 +167,10 @@ struct PLAYER_NAME : public Player {
 
    //retorna la casella mes propera que no sigui meva
    Pos adj_nempty(Pos a){
-     if(pos_ok(mou(a,1)) and cell(mou(a,1)).type == Cave and cell(mou(a,1)).owner != me())return mou(a,1);
+     if(pos_ok(mou(a,0)) and cell(mou(a,0)).type == Cave and cell(mou(a,0)).owner != me())return mou(a,0);
      if(pos_ok(mou(a,2)) and cell(mou(a,1)).type == Cave and cell(mou(a,2)).owner != me())return mou(a,2);
      if(pos_ok(mou(a,3)) and cell(mou(a,1)).type == Cave and cell(mou(a,3)).owner != me())return mou(a,3);
-     else return mou(a,4);
+     else return mou(a,1);
    }
 
    //posa b a true si tenim enemics a menys de 2 caselles i retorna la pos de l'enemic més proper o la propia
@@ -217,13 +217,13 @@ struct PLAYER_NAME : public Player {
      }
    }
 
-   //retorna true si la pos a te un mag al voltant (1 2 3 4)
+   //retorna true si la pos a te un mag al voltant (1 2 3 4) maybe not working
    bool mag_aprop(Pos a){
      if(pos_ok(mou(a,1)) and mine(cell(mou(a,1)).id) and unit(cell(mou(a,1)).id).type == Wizard)return true;
-     else if(pos_ok(mou(a,2)) and mine(cell(mou(a,1)).id) and unit(cell(mou(a,2)).id).type == Wizard)return true;
-     else if(pos_ok(mou(a,3)) and mine(cell(mou(a,1)).id) and unit(cell(mou(a,3)).id).type == Wizard)return true;
-     else if(pos_ok(mou(a,4)) and mine(cell(mou(a,1)).id) and unit(cell(mou(a,4)).id).type == Wizard)return true;
-     else return false;
+     if(pos_ok(mou(a,2)) and mine(cell(mou(a,2)).id) and unit(cell(mou(a,2)).id).type == Wizard)return true;
+     if(pos_ok(mou(a,3)) and mine(cell(mou(a,3)).id) and unit(cell(mou(a,3)).id).type == Wizard)return true;
+     if(pos_ok(mou(a,4)) and mine(cell(mou(a,4)).id) and unit(cell(mou(a,4)).id).type == Wizard)return true;
+     return false;
    }
 
    //mou dwarve cap a la posicio a CORRECTE
@@ -232,28 +232,28 @@ struct PLAYER_NAME : public Player {
      if(init.i < a.i and init.j < a.j){
        if(pos_ok(mou(init,5)) and cell(mou(init,5)).type != Granite and cell(mou(init,5)).type != Abyss) command(id,Dir(1));
      }
-     else if(init.i > a.i and init.j > a.j){
+     if(init.i > a.i and init.j > a.j){
        if(pos_ok(mou(init,7)) and cell(mou(init,7)).type != Granite and cell(mou(init,7)).type != Abyss) command(id,Dir(5));
      }
-     else if(init.i < a.i and init.j > a.j){
+     if(init.i < a.i and init.j > a.j){
        if(pos_ok(mou(init,6)) and cell(mou(init,6)).type != Granite and cell(mou(init,6)).type != Abyss) command(id,Dir(7));
      }
-     else if(init.i > a.i and init.j < a.j){
+     if(init.i > a.i and init.j < a.j){
        if(pos_ok(mou(init,4)) and cell(mou(init,4)).type != Granite and cell(mou(init,4)).type != Abyss) command(id,Dir(3));
      }
-     else if(init.i < a.i){
+     if(init.i < a.i){
        if(pos_ok(mou(init,2)) and cell(mou(init,2)).type != Granite and cell(mou(init,2)).type != Abyss) command(id,Dir(0));
      }
-     else if(init.i > a.i){
+     if(init.i > a.i){
        if(pos_ok(mou(init,0)) and cell(mou(init,0)).type != Granite and cell(mou(init,0)).type != Abyss) command(id,Dir(4));
      }
-     else if(init.j < a.j){
+     if(init.j < a.j){
        if(pos_ok(mou(init,1)) and cell(mou(init,1)).type != Granite and cell(mou(init,1)).type != Abyss) command(id,Dir(2));
      }
-     else if(init.j > a.j){
+     if(init.j > a.j){
        if(pos_ok(mou(init,3)) and cell(mou(init,3)).type != Granite and cell(mou(init,3)).type != Abyss) command(id,Dir(6));
      }
-     else command(id,Dir(8));
+     else command(id,Dir(0));
    }
 
    //mou wizzard cap a la posicio a CORRECTE
@@ -262,14 +262,15 @@ struct PLAYER_NAME : public Player {
      if(init.i < a.i){
        if(pos_ok(mou(init,2)) and cell(mou(init,2)).type != Granite and cell(mou(init,2)).type != Rock and cell(mou(init,2)).type != Abyss) command(id,Dir(0));
      }
-     else if(init.i > a.i){
+     if(init.i > a.i){
        if(pos_ok(mou(init,0)) and cell(mou(init,0)).type != Granite and cell(mou(init,0)).type != Rock and cell(mou(init,0)).type != Abyss) command(id,Dir(4));
      }
-     else if(init.j < a.j){
+     if(init.j < a.j){
        if(pos_ok(mou(init,1)) and cell(mou(init,1)).type != Granite and cell(mou(init,1)).type != Rock and cell(mou(init,1)).type != Abyss) command(id,Dir(2));
      }
      else {
        if(pos_ok(mou(init,3)) and cell(mou(init,3)).type != Granite and cell(mou(init,3)).type != Rock and cell(mou(init,3)).type != Abyss) command(id,Dir(6));
+       else mou(init,2);
      }
    }
 
@@ -279,28 +280,28 @@ struct PLAYER_NAME : public Player {
      if(init.i < a.i and init.j < a.j){
        if(pos_ok(mou(init,7)) and cell(mou(init,7)).type != Granite and cell(mou(init,7)).type != Rock and cell(mou(init,7)).type !=  Abyss) command(id,Dir(5));
      }
-     else if(init.i > a.i and init.j > a.j){
+     if(init.i > a.i and init.j > a.j){
        if(pos_ok(mou(init,5)) and cell(mou(init,5)).type != Granite and cell(mou(init,5)).type != Rock and cell(mou(init,5)).type !=  Abyss) command(id,Dir(1));
      }
-     else if(init.i < a.i and init.j > a.j){
+     if(init.i < a.i and init.j > a.j){
        if(pos_ok(mou(init,4)) and cell(mou(init,4)).type != Granite and cell(mou(init,4)).type != Rock and cell(mou(init,4)).type !=  Abyss) command(id,Dir(3));
      }
-     else if(init.i > a.i and init.j < a.j){
+     if(init.i > a.i and init.j < a.j){
        if(pos_ok(mou(init,6)) and cell(mou(init,6)).type != Granite and cell(mou(init,6)).type != Rock and cell(mou(init,6)).type !=  Abyss) command(id,Dir(7));
      }
      if(init.i < a.i){
        if(pos_ok(mou(init,0)) and cell(mou(init,0)).type != Granite and cell(mou(init,0)).type != Rock and cell(mou(init,0)).type != Abyss) command(id,Dir(4));
      }
-     else if(init.i > a.i){
+     if(init.i > a.i){
        if(pos_ok(mou(init,2)) and cell(mou(init,2)).type != Granite and cell(mou(init,2)).type != Rock and cell(mou(init,2)).type != Abyss) command(id,Dir(0));
      }
-     else if(init.j < a.j){
+     if(init.j < a.j){
        if(pos_ok(mou(init,3)) and cell(mou(init,3)).type != Granite and cell(mou(init,3)).type != Rock and cell(mou(init,3)).type != Abyss) command(id,Dir(6));
      }
-     else if(init.j > a.j){
+     if(init.j > a.j){
        if(pos_ok(mou(init,1)) and cell(mou(init,1)).type != Granite and cell(mou(init,1)).type != Rock and cell(mou(init,1)).type != Abyss) command(id,Dir(2));
      }
-     else command(id,Dir(8));
+     else command(id,Dir(0));
    }
 
    //Wizzard s'allunya de la posicio a ja que hi ha un enemic
@@ -309,16 +310,16 @@ struct PLAYER_NAME : public Player {
      if(a.i > init.i) {
        if(pos_ok(mou(init,0)) and cell(mou(init,0)).type !=  Rock and cell(mou(init,0)).type !=  Granite and cell(mou(init,0)).type !=  Abyss) command(id,Dir(4));
      }
-     else if(a.i < init.i) {
+     if(a.i < init.i) {
        if(pos_ok(mou(init,2)) and cell(mou(init,2)).type !=  Rock and cell(mou(init,2)).type !=  Granite and cell(mou(init,2)).type !=  Abyss) command(id,Dir(0));
      }
-     else if(a.j > init.j) {
+     if(a.j > init.j) {
        if(pos_ok(mou(init,3)) and cell(mou(init,3)).type !=  Rock and cell(mou(init,3)).type !=  Granite and cell(mou(init,3)).type !=  Abyss) command(id,Dir(6));
      }
-     else if(a.j < init.j) {
+     if(a.j < init.j) {
        if(pos_ok(mou(init,1)) and cell(mou(init,1)).type !=  Rock and cell(mou(init,1)).type !=  Granite and cell(mou(init,1)).type !=  Abyss) command(id,Dir(2));
      }
-     else command(id,Dir(8));
+     else command(id,Dir(6));
    }
 
    //Els dwarves es mouen cap als tresors mes propers tenint en compte parets i abismes nomes.
