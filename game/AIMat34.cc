@@ -65,7 +65,7 @@ struct PLAYER_NAME : public Player {
      q.push(a);
      set<Pos> s;
      s.insert(q.front());
-     while(not q.empty() and tresors.size() < 20){
+     while(not q.empty() and tresors.size() < 80){
        Pos aux = q.front();
        if(cell(aux).treasure)tresors.push_back(aux);
 
@@ -147,18 +147,26 @@ struct PLAYER_NAME : public Player {
      return a;
    }
 
-   //retorna cert si tenim el balrog aprop
-   bool balrog(){
-     return false;
-   }
-
-   //ens allunyem del balrog
+   //ens allunyem del balrog si el tenim aprop
    void escape_balrog(Pos a){
-     if(unit(cell(a).id).type == Dwarf){
-       //escape dwarf
-     }
-     else{
-       //escape wizzard
+     int i,j,lim1,lim2;
+     if(a.i > 1)i = a.i - 2;
+     else i = 0;
+     if(a.j > 1)j = a.j - 2;
+     else j = 0;
+     if(a.i < 59)lim1 = a.i + 2;
+     else lim1 = 60;
+     if(a.j < 59)lim2 = a.j + 2;
+     else lim2 = 60;
+     int id = cell(a).id;
+     for(int p = i; p < lim1; ++p){
+       for(int q = j; q < lim2; ++q){
+         if(cell(Pos(p,q)).id == balrog_id()){
+           cout << 1111111111 << " " << id << " (" << p << "," << q << ")" << endl;
+           if(unit(cell(a).id).type == Dwarf)run_dwarve(id,Pos(p,q));
+           else run_wizzard(id,Pos(p,q));
+         }
+       }
      }
    }
 
@@ -186,7 +194,7 @@ struct PLAYER_NAME : public Player {
      else command(id,Dir(0));
    }
 
-   //Dwarve s'allunya de la posicio a ja que hi ha un enemic (falta evitar granit i abismes)
+   //Dwarve s'allunya de la posicio a ja que hi ha un enemic (falta evitar roca, granit i abismes)
    void run_dwarve(int id, Pos a){
      Pos init = unit(id).pos;
      if(a.i < init.i and a.j < init.j) command(id,Dir(1));
@@ -200,7 +208,7 @@ struct PLAYER_NAME : public Player {
      else command(id,Dir(3));
    }
 
-   //Wizzard s'allunya de la posicio a ja que hi ha un enemic (falta evitar granit i abismes)
+   //Wizzard s'allunya de la posicio a ja que hi ha un enemic (falta evitar roca, granit i abismes)
    void run_wizzard(int id, Pos a){
      Pos init = unit(id).pos;
      if(a.i > init.i) command(id,Dir(4));
@@ -216,15 +224,16 @@ struct PLAYER_NAME : public Player {
      int n = D.size();
      for(int i = 0; i < n; ++i){
        int id = D[i];
-       if(balrog())escape_balrog(unit(id).pos); //primer fugim del balrog
+
+       escape_balrog(unit(id).pos); //primer fugim del balrog si el tenim aprop
+
+       bool b = false;
+       Pos enem = check_enemics(unit(id).pos, b);
+       if(b)run_dwarve(id,enem); //fugim de l'enemic
+
        else{
-         bool b = false;
-         Pos enem = check_enemics(unit(id).pos, b);
-         if(b)run_dwarve(id,enem); //fugim de l'enemic
-         else{
-           obj_dwarve = tresor_proper(unit(id).pos); //tresor més proper a id
-           move_dwarve(id,obj_dwarve); //movem id cap a a
-         }
+         obj_dwarve = tresor_proper(unit(id).pos); //tresor més proper a id
+         move_dwarve(id,obj_dwarve); //movem id cap a a
        }
      }
    }
@@ -236,15 +245,16 @@ struct PLAYER_NAME : public Player {
      //s'han de moure cap el dwarve mes proper per curar-lo
      for(int i = 0; i < n; ++i){
        int id = W[i];
-       if(balrog())escape_balrog(unit(id).pos); //primer fugim del balrog
-       else{
-         bool b = false;
-         Pos enem = check_enemics(unit(id).pos, b);
-         if(b)run_wizzard(id,enem); //fugim de l'enemic
-         else {
-           if(round()%10 == 0)obj_wizzard = bfs_dwarves(unit(id).pos); //dwarve mes proper
-           move_wizzard(id,obj_wizzard); //no hi ha enemics aprop
-         }
+
+       escape_balrog(unit(id).pos); //primer fugim del balrog si el tenim aprop
+
+       bool b = false;
+       Pos enem = check_enemics(unit(id).pos, b);
+       if(b)run_wizzard(id,enem); //fugim de l'enemic
+
+       else {
+         obj_wizzard = bfs_dwarves(unit(id).pos); //dwarve mes proper
+         move_wizzard(id,obj_wizzard); //no hi ha enemics aprop
        }
      }
    }
