@@ -16,7 +16,8 @@ winnerline=$( tail -2 strgameoutput$counter.txt | head -1 )
 winner=$( echo $winnerline | cut -d " " -f 3 )
 echo $winner
 echo $seed
-
+rm strgame$counter.res
+rm strgameoutput$counter.txt
 
 
 if [ $winner == $1 ]
@@ -41,5 +42,3 @@ echo $1 won $wc1
 echo $2 won $wc2
 echo $3 won $wc3
 echo $4 won $wc4
-
-rm strgame*

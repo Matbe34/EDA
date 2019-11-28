@@ -24,9 +24,10 @@ struct PLAYER_NAME : public Player {
    //Bottom, BR, Right, RT, Top, TL, Left, LB, None,
    //   0     1    2     3   4   5    6     7   8
    typedef vector<vector<char> > Matrix;
-   vector<int> W = wizards(me());
-   vector<int> D = dwarves(me());
+   vector<int> W ;//= wizards(me());
+   vector<int> D ;//= dwarves(me());
    vector<pair<int,Pos> > DwP; //vector amb parell de id i pos de cada dwarve
+   vector<pair<int,Pos> > WiP; //vector amb parell de id i pos de cada wizard
    vector<Pos> tresors; //vector on estan les posicions dels tresors
    Pos obj_dwarve; //objectiu dels dwarves
    Pos obj_wizzard; //objectiu dels mags
@@ -54,6 +55,9 @@ struct PLAYER_NAME : public Player {
      int n = D.size();
      DwP.clear();
      for(int i = 0; i < n; ++i)DwP.push_back(make_pair(D[i],unit(D[i]).pos));
+     int m = W.size();
+     WiP.clear();
+     for(int i = 0; i < m; ++i)WiP.push_back(make_pair(W[i],unit(W[i]).pos));
    }
 
    void printset(const set<Pos>& s){
@@ -114,6 +118,38 @@ struct PLAYER_NAME : public Player {
      return fi;
    }
 
+   //retorna la posicio del dwarf enemic mes proper a a
+   Pos bfs_dw_enem(Pos a){
+     queue<Pos> q;
+     q.push(a);
+     while(not q.empty()){
+       Pos aux = q.front();
+       if(unit(cell(aux).id).type == Dwarf and not mine(cell(aux).id))return q.front();
+       else{
+         if(pos_ok(mou(q.front(),1))) q.push(mou(q.front(),1));
+         if(pos_ok(mou(q.front(),2))) q.push(mou(q.front(),2));
+         if(pos_ok(mou(q.front(),3))) q.push(mou(q.front(),3));
+         if(pos_ok(mou(q.front(),4))) q.push(mou(q.front(),4));
+         q.pop();
+       }
+     }
+     return a;
+   }
+
+   Pos bfs_wizards(Pos a){
+     int n = WiP.size();
+     int min = dist_min(a,WiP[0].second);
+     Pos fi = WiP[0].second;
+     for(int i = 1; i < n; ++i){
+       int aux = dist_min(a,WiP[i].second);
+       if(aux < min) {
+         min = aux;
+         fi = WiP[i].second;
+       }
+     }
+     return fi;
+   }
+
    //retorna la posicio del dwarve mes proper a a
    Pos bfs_dwarves(Pos a){
      int n = DwP.size();
@@ -129,16 +165,24 @@ struct PLAYER_NAME : public Player {
      return fi;
    }
 
+   //retorna la casella mes propera que no sigui meva
+   Pos adj_nempty(Pos a){
+     if(pos_ok(mou(a,1)) and cell(mou(a,1)).type == Cave and cell(mou(a,1)).owner != me())return mou(a,1);
+     if(pos_ok(mou(a,2)) and cell(mou(a,1)).type == Cave and cell(mou(a,2)).owner != me())return mou(a,2);
+     if(pos_ok(mou(a,3)) and cell(mou(a,1)).type == Cave and cell(mou(a,3)).owner != me())return mou(a,3);
+     else return mou(a,4);
+   }
+
    //posa b a true si tenim enemics a menys de 2 caselles i retorna la pos de l'enemic més proper o la propia
-   Pos check_enemics(Pos a, bool& b){
+   Pos check_enemics(Pos a, bool& b, int n){
      int i,j,lim1,lim2;
-     if(a.i > 1)i = a.i - 2;
+     if(a.i > 1)i = a.i - n;
      else i = 0;
-     if(a.j > 1)j = a.j - 2;
+     if(a.j > 1)j = a.j - n;
      else j = 0;
-     if(a.i < 59)lim1 = a.i + 2;
+     if(a.i < 59)lim1 = a.i + n;
      else lim1 = 60;
-     if(a.j < 59)lim2 = a.j + 2;
+     if(a.j < 59)lim2 = a.j + n;
      else lim2 = 60;
      for(int p = i; p < lim1; ++p){
        for(int q = j; q < lim2; ++q){
@@ -166,7 +210,6 @@ struct PLAYER_NAME : public Player {
      for(int p = i; p < lim1; ++p){
        for(int q = j; q < lim2; ++q){
          if(cell(Pos(p,q)).id == balrog_id()){
-           cout << 1111111111 << " " << id << " (" << p << "," << q << ")" << endl;
            if(unit(cell(a).id).type == Dwarf)run_dwarve(id,Pos(p,q));
            else run_wizzard(id,Pos(p,q));
          }
@@ -174,93 +217,153 @@ struct PLAYER_NAME : public Player {
      }
    }
 
-   //mou dwarve cap a la posicio a (falta evitar granit i abismes)
+   //retorna true si la pos a te un mag al voltant (1 2 3 4)
+   bool mag_aprop(Pos a){
+     if(pos_ok(mou(a,1)) and mine(cell(mou(a,1)).id) and unit(cell(mou(a,1)).id).type == Wizard)return true;
+     else if(pos_ok(mou(a,2)) and mine(cell(mou(a,1)).id) and unit(cell(mou(a,2)).id).type == Wizard)return true;
+     else if(pos_ok(mou(a,3)) and mine(cell(mou(a,1)).id) and unit(cell(mou(a,3)).id).type == Wizard)return true;
+     else if(pos_ok(mou(a,4)) and mine(cell(mou(a,1)).id) and unit(cell(mou(a,4)).id).type == Wizard)return true;
+     else return false;
+   }
+
+   //mou dwarve cap a la posicio a CORRECTE
    void move_dwarve(int id, Pos a){
      Pos init = unit(id).pos;
-     if(a.i < init.i and a.j < init.j) command(id,Dir(5));
-     else if(a.i > init.i and a.j < init.j) command(id,Dir(7));
-     else if(a.i < init.i and a.j > init.j) command(id,Dir(3));
-     else if(a.i > init.i and a.j > init.j) command(id,Dir(1));
-     else if(a.j < init.j) command(id,Dir(6));
-     else if(a.j > init.j) command(id,Dir(2));
-     else if(a.i < init.i) command(id,Dir(4));
-     else if(a.i > init.i) command(id,Dir(0));
-     else command(id,Dir(1));
+     if(init.i < a.i and init.j < a.j){
+       if(pos_ok(mou(init,5)) and cell(mou(init,5)).type != Granite and cell(mou(init,5)).type != Abyss) command(id,Dir(1));
+     }
+     else if(init.i > a.i and init.j > a.j){
+       if(pos_ok(mou(init,7)) and cell(mou(init,7)).type != Granite and cell(mou(init,7)).type != Abyss) command(id,Dir(5));
+     }
+     else if(init.i < a.i and init.j > a.j){
+       if(pos_ok(mou(init,6)) and cell(mou(init,6)).type != Granite and cell(mou(init,6)).type != Abyss) command(id,Dir(7));
+     }
+     else if(init.i > a.i and init.j < a.j){
+       if(pos_ok(mou(init,4)) and cell(mou(init,4)).type != Granite and cell(mou(init,4)).type != Abyss) command(id,Dir(3));
+     }
+     else if(init.i < a.i){
+       if(pos_ok(mou(init,2)) and cell(mou(init,2)).type != Granite and cell(mou(init,2)).type != Abyss) command(id,Dir(0));
+     }
+     else if(init.i > a.i){
+       if(pos_ok(mou(init,0)) and cell(mou(init,0)).type != Granite and cell(mou(init,0)).type != Abyss) command(id,Dir(4));
+     }
+     else if(init.j < a.j){
+       if(pos_ok(mou(init,1)) and cell(mou(init,1)).type != Granite and cell(mou(init,1)).type != Abyss) command(id,Dir(2));
+     }
+     else if(init.j > a.j){
+       if(pos_ok(mou(init,3)) and cell(mou(init,3)).type != Granite and cell(mou(init,3)).type != Abyss) command(id,Dir(6));
+     }
+     else command(id,Dir(8));
    }
 
-   //mou wizzard cap a la posicio a (falta evitar granit i abismes)
+   //mou wizzard cap a la posicio a CORRECTE
    void move_wizzard(int id, Pos a){
      Pos init = unit(id).pos;
-     if(a.i > init.i) command(id,Dir(0));
-     else if(a.i < init.i) command(id,Dir(4));
-     else if(a.j > init.j) command(id,Dir(2));
-     else if(a.j < init.j) command(id,Dir(6));
-     else command(id,Dir(0));
+     if(init.i < a.i){
+       if(pos_ok(mou(init,2)) and cell(mou(init,2)).type != Granite and cell(mou(init,2)).type != Rock and cell(mou(init,2)).type != Abyss) command(id,Dir(0));
+     }
+     else if(init.i > a.i){
+       if(pos_ok(mou(init,0)) and cell(mou(init,0)).type != Granite and cell(mou(init,0)).type != Rock and cell(mou(init,0)).type != Abyss) command(id,Dir(4));
+     }
+     else if(init.j < a.j){
+       if(pos_ok(mou(init,1)) and cell(mou(init,1)).type != Granite and cell(mou(init,1)).type != Rock and cell(mou(init,1)).type != Abyss) command(id,Dir(2));
+     }
+     else {
+       if(pos_ok(mou(init,3)) and cell(mou(init,3)).type != Granite and cell(mou(init,3)).type != Rock and cell(mou(init,3)).type != Abyss) command(id,Dir(6));
+     }
    }
 
-   //Dwarve s'allunya de la posicio a ja que hi ha un enemic (falta evitar roca, granit i abismes)
-   void run_dwarve(int id, Pos a){
+   //Dwarve s'allunya de la posicio a ja que hi ha un enemic
+   void run_dwarve(int id, Pos a){// 4 2 0 6 3 1 7 5
      Pos init = unit(id).pos;
-     if(a.i < init.i and a.j < init.j) {
-       if(cell(mou(init,5)).type !=  Rock or cell(mou(init,5)).type !=  Granite or cell(mou(init,5)).type !=  Abyss)command(id,Dir(1));
+     if(init.i < a.i and init.j < a.j){
+       if(pos_ok(mou(init,7)) and cell(mou(init,7)).type != Granite and cell(mou(init,7)).type != Rock and cell(mou(init,7)).type !=  Abyss) command(id,Dir(5));
      }
-     else if(a.i > init.i and a.j < init.j) {
-       if(cell(mou(init,5)).type !=  Rock or cell(mou(init,5)).type !=  Granite or cell(mou(init,5)).type !=  Abyss) command(id,Dir(3));
+     else if(init.i > a.i and init.j > a.j){
+       if(pos_ok(mou(init,5)) and cell(mou(init,5)).type != Granite and cell(mou(init,5)).type != Rock and cell(mou(init,5)).type !=  Abyss) command(id,Dir(1));
      }
-     else if(a.i < init.i and a.j > init.j){
-       if(cell(mou(init,5)).type !=  Rock or cell(mou(init,5)).type !=  Granite or cell(mou(init,5)).type !=  Abyss) command(id,Dir(7));
+     else if(init.i < a.i and init.j > a.j){
+       if(pos_ok(mou(init,4)) and cell(mou(init,4)).type != Granite and cell(mou(init,4)).type != Rock and cell(mou(init,4)).type !=  Abyss) command(id,Dir(3));
      }
-     else if(a.i > init.i and a.j > init.j) {
-       if(cell(mou(init,5)).type !=  Rock or cell(mou(init,5)).type !=  Granite or cell(mou(init,5)).type !=  Abyss) command(id,Dir(5));
+     else if(init.i > a.i and init.j < a.j){
+       if(pos_ok(mou(init,6)) and cell(mou(init,6)).type != Granite and cell(mou(init,6)).type != Rock and cell(mou(init,6)).type !=  Abyss) command(id,Dir(7));
      }
-     else if(a.j < init.j) {
-       if(cell(mou(init,5)).type !=  Rock or cell(mou(init,5)).type !=  Granite or cell(mou(init,5)).type !=  Abyss) command(id,Dir(2));
+     if(init.i < a.i){
+       if(pos_ok(mou(init,0)) and cell(mou(init,0)).type != Granite and cell(mou(init,0)).type != Rock and cell(mou(init,0)).type != Abyss) command(id,Dir(4));
      }
-     else if(a.j > init.j) {
-       if(cell(mou(init,5)).type !=  Rock or cell(mou(init,5)).type !=  Granite or cell(mou(init,5)).type !=  Abyss) command(id,Dir(6));
+     else if(init.i > a.i){
+       if(pos_ok(mou(init,2)) and cell(mou(init,2)).type != Granite and cell(mou(init,2)).type != Rock and cell(mou(init,2)).type != Abyss) command(id,Dir(0));
      }
-     else if(a.i < init.i) {
-       if(cell(mou(init,5)).type !=  Rock or cell(mou(init,5)).type !=  Granite or cell(mou(init,5)).type !=  Abyss) command(id,Dir(0));
+     else if(init.j < a.j){
+       if(pos_ok(mou(init,3)) and cell(mou(init,3)).type != Granite and cell(mou(init,3)).type != Rock and cell(mou(init,3)).type != Abyss) command(id,Dir(6));
      }
-     else if(a.i > init.i) {
-       if(cell(mou(init,5)).type !=  Rock or cell(mou(init,5)).type !=  Granite or cell(mou(init,5)).type !=  Abyss) command(id,Dir(4));// 4 2 0 6 3 1 7 5
+     else if(init.j > a.j){
+       if(pos_ok(mou(init,1)) and cell(mou(init,1)).type != Granite and cell(mou(init,1)).type != Rock and cell(mou(init,1)).type != Abyss) command(id,Dir(2));
      }
-     else command(id,Dir(3));
+     else command(id,Dir(8));
    }
 
-   //Wizzard s'allunya de la posicio a ja que hi ha un enemic (falta evitar roca, granit i abismes)
+   //Wizzard s'allunya de la posicio a ja que hi ha un enemic
    void run_wizzard(int id, Pos a){
      Pos init = unit(id).pos;
-     if(a.i > init.i) command(id,Dir(4));
+     if(a.i > init.i) {
+       if(pos_ok(mou(init,0)) and cell(mou(init,0)).type !=  Rock and cell(mou(init,0)).type !=  Granite and cell(mou(init,0)).type !=  Abyss) command(id,Dir(4));
+     }
      else if(a.i < init.i) {
-       if(cell(mou(init,5)).type !=  Rock or cell(mou(init,5)).type !=  Granite or cell(mou(init,5)).type !=  Abyss) command(id,Dir(0));
+       if(pos_ok(mou(init,2)) and cell(mou(init,2)).type !=  Rock and cell(mou(init,2)).type !=  Granite and cell(mou(init,2)).type !=  Abyss) command(id,Dir(0));
      }
      else if(a.j > init.j) {
-       if(cell(mou(init,5)).type !=  Rock or cell(mou(init,5)).type !=  Granite or cell(mou(init,5)).type !=  Abyss) command(id,Dir(6));
+       if(pos_ok(mou(init,3)) and cell(mou(init,3)).type !=  Rock and cell(mou(init,3)).type !=  Granite and cell(mou(init,3)).type !=  Abyss) command(id,Dir(6));
      }
      else if(a.j < init.j) {
-       if(cell(mou(init,5)).type !=  Rock or cell(mou(init,5)).type !=  Granite or cell(mou(init,5)).type !=  Abyss) command(id,Dir(2));
+       if(pos_ok(mou(init,1)) and cell(mou(init,1)).type !=  Rock and cell(mou(init,1)).type !=  Granite and cell(mou(init,1)).type !=  Abyss) command(id,Dir(2));
      }
-     else command(id,Dir(4));
+     else command(id,Dir(8));
    }
 
    //Els dwarves es mouen cap als tresors mes propers tenint en compte parets i abismes nomes.
+   //Volem que la 1ª tercera part siguin caçadors, la 2ª busquin tresors i la 3ª marquin cel·les
    void move_dwarves(){
      vector<int> D = dwarves(me());
-     int n = D.size();
-     for(int i = 0; i < n; ++i){
+     int n = D.size()/3, m = 2 * D.size()/3, o = D.size();
+
+     for(int i = 0; i < n; ++i){// dwarves caçadors
+       int id = D[i];
+       escape_balrog(unit(id).pos); //primer fugim del balrog si el tenim aprop
+       bool b = false;
+       Pos enem = check_enemics(unit(id).pos, b,2);
+       if(b and unit(cell(enem).id).type != Dwarf and unit(cell(enem).id).type != Wizard)run_dwarve(id,enem); //fugim de les unitats de Sauron
+       else{
+         if(mag_aprop(unit(id).pos)){ //estem protegits
+           if(b)move_wizzard(id,enem); //anem a pel dwarf enemic mes proper
+           else move_wizzard(id,bfs_dw_enem(unit(id).pos)); //anem a pel dwarf enemic mes proper
+         }
+         else move_dwarve(id,bfs_wizards(unit(id).pos));
+       }
+     }
+
+     for(int i = n; i < m; ++i){ //2ª tercera part dels dwarves busquen tresors. +3ª tercera pq no esta implementada encara
        int id = D[i];
 
        escape_balrog(unit(id).pos); //primer fugim del balrog si el tenim aprop
 
        bool b = false;
-       Pos enem = check_enemics(unit(id).pos, b);
+       Pos enem = check_enemics(unit(id).pos, b,2);
        if(b and unit(cell(enem).id).type != Dwarf and unit(cell(enem).id).type != Wizard)run_dwarve(id,enem); //fugim de les unitats de Sauron
        else if(b)move_dwarve(id,enem);
        else{
          obj_dwarve = tresor_proper(unit(id).pos); //tresor més proper a id
          move_dwarve(id,obj_dwarve); //movem id cap a a
        }
+     }
+
+     for(int i = m; i < o; ++i){//ultims dwarves que capturen cel·les
+       int id = D[i];
+       escape_balrog(unit(id).pos); //primer fugim del balrog si el tenim aprop
+       bool b = false;
+       Pos enem = check_enemics(unit(id).pos, b,3);
+       if(b)run_dwarve(id,enem); //fugim de les unitats de Sauron
+       else move_dwarve(id,adj_nempty(unit(id).pos));
      }
    }
 
@@ -275,7 +378,7 @@ struct PLAYER_NAME : public Player {
        escape_balrog(unit(id).pos); //primer fugim del balrog si el tenim aprop
 
        bool b = false;
-       Pos enem = check_enemics(unit(id).pos, b);
+       Pos enem = check_enemics(unit(id).pos, b,2);
        if(b)run_wizzard(id,enem); //fugim de l'enemic
 
        else {
