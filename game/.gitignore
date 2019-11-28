@@ -1,3 +1,6 @@
+game/Board.o
 Board.o
+game/AIDummy.o
 AIDummy.o
 prova.res
+game/prova.res
