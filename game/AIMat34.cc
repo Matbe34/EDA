@@ -38,6 +38,10 @@ struct PLAYER_NAME : public Player {
        case 2: ++a.i; break;
        case 3: --a.j; break;
        case 1: ++a.j; break;
+       case 4: ++a.j; --a.i; break;
+       case 5: ++a.j; ++a.i; break;
+       case 6: --a.j; ++a.i; break;
+       case 7: --a.j; --a.i; break;
        default: ;
      }
      return a;
@@ -197,14 +201,30 @@ struct PLAYER_NAME : public Player {
    //Dwarve s'allunya de la posicio a ja que hi ha un enemic (falta evitar roca, granit i abismes)
    void run_dwarve(int id, Pos a){
      Pos init = unit(id).pos;
-     if(a.i < init.i and a.j < init.j) command(id,Dir(1));
-     else if(a.i > init.i and a.j < init.j) command(id,Dir(3));
-     else if(a.i < init.i and a.j > init.j) command(id,Dir(7));
-     else if(a.i > init.i and a.j > init.j) command(id,Dir(5));
-     else if(a.j < init.j) command(id,Dir(2));
-     else if(a.j > init.j) command(id,Dir(6));
-     else if(a.i < init.i) command(id,Dir(0));
-     else if(a.i > init.i) command(id,Dir(4));// 4 2 0 6
+     if(a.i < init.i and a.j < init.j) {
+       if(cell(mou(init,5)).type !=  Rock or cell(mou(init,5)).type !=  Granite or cell(mou(init,5)).type !=  Abyss)command(id,Dir(1));
+     }
+     else if(a.i > init.i and a.j < init.j) {
+       if(cell(mou(init,5)).type !=  Rock or cell(mou(init,5)).type !=  Granite or cell(mou(init,5)).type !=  Abyss) command(id,Dir(3));
+     }
+     else if(a.i < init.i and a.j > init.j){
+       if(cell(mou(init,5)).type !=  Rock or cell(mou(init,5)).type !=  Granite or cell(mou(init,5)).type !=  Abyss) command(id,Dir(7));
+     }
+     else if(a.i > init.i and a.j > init.j) {
+       if(cell(mou(init,5)).type !=  Rock or cell(mou(init,5)).type !=  Granite or cell(mou(init,5)).type !=  Abyss) command(id,Dir(5));
+     }
+     else if(a.j < init.j) {
+       if(cell(mou(init,5)).type !=  Rock or cell(mou(init,5)).type !=  Granite or cell(mou(init,5)).type !=  Abyss) command(id,Dir(2));
+     }
+     else if(a.j > init.j) {
+       if(cell(mou(init,5)).type !=  Rock or cell(mou(init,5)).type !=  Granite or cell(mou(init,5)).type !=  Abyss) command(id,Dir(6));
+     }
+     else if(a.i < init.i) {
+       if(cell(mou(init,5)).type !=  Rock or cell(mou(init,5)).type !=  Granite or cell(mou(init,5)).type !=  Abyss) command(id,Dir(0));
+     }
+     else if(a.i > init.i) {
+       if(cell(mou(init,5)).type !=  Rock or cell(mou(init,5)).type !=  Granite or cell(mou(init,5)).type !=  Abyss) command(id,Dir(4));// 4 2 0 6 3 1 7 5
+     }
      else command(id,Dir(3));
    }
 
@@ -212,9 +232,15 @@ struct PLAYER_NAME : public Player {
    void run_wizzard(int id, Pos a){
      Pos init = unit(id).pos;
      if(a.i > init.i) command(id,Dir(4));
-     else if(a.i < init.i) command(id,Dir(0));
-     else if(a.j > init.j) command(id,Dir(6));
-     else if(a.j < init.j) command(id,Dir(2));
+     else if(a.i < init.i) {
+       if(cell(mou(init,5)).type !=  Rock or cell(mou(init,5)).type !=  Granite or cell(mou(init,5)).type !=  Abyss) command(id,Dir(0));
+     }
+     else if(a.j > init.j) {
+       if(cell(mou(init,5)).type !=  Rock or cell(mou(init,5)).type !=  Granite or cell(mou(init,5)).type !=  Abyss) command(id,Dir(6));
+     }
+     else if(a.j < init.j) {
+       if(cell(mou(init,5)).type !=  Rock or cell(mou(init,5)).type !=  Granite or cell(mou(init,5)).type !=  Abyss) command(id,Dir(2));
+     }
      else command(id,Dir(4));
    }
 
@@ -229,8 +255,8 @@ struct PLAYER_NAME : public Player {
 
        bool b = false;
        Pos enem = check_enemics(unit(id).pos, b);
-       if(b)run_dwarve(id,enem); //fugim de l'enemic
-
+       if(b and unit(cell(enem).id).type != Dwarf and unit(cell(enem).id).type != Wizard)run_dwarve(id,enem); //fugim de les unitats de Sauron
+       else if(b)move_dwarve(id,enem);
        else{
          obj_dwarve = tresor_proper(unit(id).pos); //tresor més proper a id
          move_dwarve(id,obj_dwarve); //movem id cap a a
