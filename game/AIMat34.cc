@@ -32,6 +32,100 @@ struct PLAYER_NAME : public Player {
    Pos obj_dwarve; //objectiu dels dwarves
    Pos obj_wizzard; //objectiu dels mags
 
+//##############################################################################################################################################
+//##############################################################################################################################################
+//##############################################################################################################################################
+struct node{
+  int i;  int j;  struct node *parent;  int gcost;  int hcost;
+};
+
+bool walkable(node a){
+  Pos x = Pos(a.i,a.j);
+  if(pos_ok(x) and (cell(x).type == Cave or cell(x).type == Outside))return true;
+  return false;
+}
+
+int getDist(node a, node b){
+    int distX = abs(a.j - b.j);
+    int distY = abs(a.i - b.i);
+    if(distX > distY) return (14*distY + 10*(distX - distY));
+    return (14*distX + 10*(distY - distX));
+}
+
+int fcost(node a) {
+  return a.hcost + a.gcost;
+}
+
+node retrace_path(node init, node end){
+  stack<node> s;
+  node current = new node;
+  current = end;
+  while(current != init){
+    s.push(current);
+    current = new node;
+    current = current.parent;
+  }
+  return s.top();
+}
+
+node nodify(Pos a){
+  node n = new node;
+  n.i = a.i;
+  n.j = a.j;
+}
+
+set<Pos> neighbours(node x){
+  set<node> set;
+  Pos a = Pos(x.i,x.j);
+  if(walkable(mou(a,0))) set.insert(nodify(mou(a,0)));
+  if(walkable(mou(a,1))) set.insert(nodify(mou(a,1)));
+  if(walkable(mou(a,2))) set.insert(nodify(mou(a,2)));
+  if(walkable(mou(a,3))) set.insert(nodify(mou(a,3)));
+  if(walkable(mou(a,4))) set.insert(nodify(mou(a,4)));
+  if(walkable(mou(a,5))) set.insert(nodify(mou(a,5)));
+  if(walkable(mou(a,6))) set.insert(nodify(mou(a,6)));
+  if(walkable(mou(a,7))) set.insert(nodify(mou(a,7)));
+  return set;
+}
+
+node aStar(node a, node b){
+   set<node> openPos;
+   set<node> closePos;
+   openPos.insert(a);
+
+   while(openPos.size() > 0){
+     node current = new node;
+     current = *(openPos.begin());
+     set<Pos>::iterator it = openPos.begin();
+     ++it;
+     for(it; it != openPos.end(); ++it){
+       if(fcost(*it) < fcost(current) or (fcost(*it) == fcost(current) and it->hcost < current->hcost)) current = *it;
+     }
+     openPos.erase(current);
+     closePos.insert(current);
+
+     if(current == b)return retrace_path(a,b);
+
+     set<node> neigh = neighbours(current);
+     set<node>::iterator it1;
+     for(it1 = neigh.begin(); it1 != neigh.end(); ++it1){
+       node n = new node;
+       n = *it1;
+       int mov_cost = current.gcost + getDist(current,n);
+       if(mov_cost < n->gcost or openPos.find(n) == openPos.end()){
+         n.gcost = mov_cost;
+         neigh.hcost = getDist(n,b);
+         neigh.parent = current;
+         if(openPos.find(n) == openPos.end()) openPos.insert(n);
+       }
+     }
+   }
+}
+
+//##############################################################################################################################################
+//##############################################################################################################################################
+//##############################################################################################################################################
+
    //retorna una posicio fet el moviment indicat: 0 = UP, 1 = RIGHT, 2 = DOWN, 3 = LEFT
    Pos mou(Pos a, int s){
      switch (s){
