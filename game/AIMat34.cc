@@ -31,6 +31,87 @@ struct PLAYER_NAME : public Player {
    vector<Pos> tresors; //vector on estan les posicions dels tresors
    Pos obj_dwarve; //objectiu dels dwarves
    Pos obj_wizzard; //objectiu dels mags
+   const int MAXDIST = 1e9;
+
+   void cellvalue(Pos a){
+     if(cell(a).type == Cave or cell(a).type == Outside)return 1;
+     if(cell(a).type == Rock)return cell(a).turns + 2;
+     else return MAXDIST;
+   }
+
+   int getDist(Pos a, Pos b){
+    int distX = abs(a.j - b.j);
+    int distY = abs(a.i - b.i);
+    if(distX > distY) return (14*distY + 10*(distX - distY));
+    return (14*distX + 10*(distY - distX));
+  }
+
+    Pos traceback(Pos a, const vector<pair<Pos,int> >& v){
+      int n = v.size();
+      pair<Pos,int> s = v[n-1];
+      int i;
+      while(s.first != a){
+        for(i = v.size()-1; i >= 0; --i){
+          if(v[i].first == s.first) //wtf com torno enrere
+        }
+      }
+
+    }
+
+
+
+   typedef pair<int,Pos> warc;
+   Pos dijkstra(Pos ini, Pos fi){
+     priority_queue<arc> > Q;
+     map<Pos,int> m;
+     vector<pair<Pos,int> > res;
+     int n = (abs(ini.j - fi.j) + 2) * (2 * abs(ini.i - fi.i));
+     visited.insert(a);
+     Q.push(make_pair(getDist(a,b),ini));
+     res.push_back(Q.top());
+     bool found = false;
+     if(Q.top() == b)found == true;
+     while (not Q.empty() and not found){
+       warc w = Q.top(); Q.pop();
+       if(Q.top() == b)found = true;
+       int dist = -w.first;
+       Pos u = w.second;
+       for(int i = 0; i < 3; ++i){
+         for(int j = 0; j < 3; ++j){
+           Pos po = Pos(i,j);
+           if(visited.find(Po) == visited.end()){
+             if(m.find(po) == m.end())m.insert(po,MAXDIST);
+             int d2 = dist + cellvalue(po);
+             int ant = m.find(po)
+             if(d2 <= m.find(po)->second and visited.find(po) == visited.end()){
+               Q.push(make_pair(d2,u));
+             }
+             visited.insert(po);
+           }
+         }
+       }
+       res.push_back(w);
+     }
+     return traceback(ini,res);
+   }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
    //retorna una posicio fet el moviment indicat: 0 = UP, 1 = RIGHT, 2 = DOWN, 3 = LEFT
    Pos mou(Pos a, int s){
