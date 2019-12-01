@@ -9,4 +9,8 @@ int quick(int n, int k, int m){
 }
 
 int main(){
+  int n, k, m;
+  while(cin >> n >> k >> m){
+    cout << quick(n,k,m) << endl;
+  }
 }
