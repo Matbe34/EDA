@@ -12,7 +12,6 @@ queue<int> res;
 void ordenaciotop(graph& G, int x){
   for(int i = 0; i < G[x].size(); ++i){
     if(not visited[G[x][i]]){
-
       ordenaciotop(G,G[x][i]);
     }
     visited[G[x][i]] = true;
