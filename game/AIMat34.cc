@@ -24,6 +24,7 @@ struct PLAYER_NAME : public Player {
    //Bottom, BR, Right, RT, Top, TL, Left, LB, None,
    //   0     1    2     3   4   5    6     7   8
    typedef vector<vector<char> > Matrix;
+
    vector<int> W ;//= wizards(me());
    vector<int> D ;//= dwarves(me());
    vector<pair<int,Pos> > DwP; //vector amb parell de id i pos de cada dwarve
@@ -60,6 +61,25 @@ struct PLAYER_NAME : public Player {
      for(int i = 0; i < m; ++i)WiP.push_back(make_pair(W[i],unit(W[i]).pos));
    }
 
+   List dijkstra(Pos a){
+     priority_queue<pair<Pos,int> > q;
+     q.push(make_pair(a,0));
+     vector<Pos> came_from(3600);
+     came_from[a.i*60+a.j] = Pos(-1,-1);
+     vector<int> cost(3600,1e9);
+     cost[a.i*60+a.j] = 0;
+     while(not q.empty()){
+       Pos current = q.front(); q.pop();
+
+       if(current == target)break;
+       for(int i = 0; i < 4; ++i){
+         Pos aux = neighbour(current,i);
+         int cost =
+       }
+
+     }
+
+   }
    //Troba tots els tresors inicials i els posa la seva posició al vector tresors --> eficient
    void bfs_tresors(Pos a){
      int cont =0;
