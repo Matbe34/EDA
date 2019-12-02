@@ -172,7 +172,7 @@ struct PLAYER_NAME : public Player {
      notvis.insert(a);
      while(not q.empty()){
        Pos aux = q.front();
-       if(cell(aux).id != -1 and (unit(cell(aux).id).type == Dwarf or unit(cell(aux).id).type == Wizard)and not mine(cell(aux).id))return q.front();
+       if(pos_ok(aux) and cell(aux).id != -1 and (unit(cell(aux).id).type == Dwarf or unit(cell(aux).id).type == Wizard)and not mine(cell(aux).id))return q.front();
        else{
          if(pos_ok(mou(q.front(),0)) and (cell(mou(q.front(),0)).type == Cave or cell(mou(q.front(),0)).type == Outside or cell(mou(q.front(),0)).type == Rock)) {
            if(notvis.find(mou(q.front(),0)) == notvis.end()) q.push(mou(q.front(),0));
@@ -474,7 +474,7 @@ struct PLAYER_NAME : public Player {
    void move_dwarves(){
      vector<int> K = dwarves(me());
      int n = K.size();
-     if(round() < 150){
+     if(round() < 130){
        for(int i = 0; i < n; ++i){ //2ª tercera part dels dwarves busquen tresors. +3ª tercera pq no esta implementada encara
          int id = K[i];
 
@@ -487,44 +487,14 @@ struct PLAYER_NAME : public Player {
          //   move_dwarve(id,bfs_wizards(unit(id).pos));
          // }
          else {
-           move_dwarve(id,bfs_dw_enem(unit(id).pos));
+           Pos aux = bfs_dw_enem(unit(id).pos);
+           if(pos_ok(aux)) move_dwarve(id,aux);
+           else move_dwarve(id,dijkstra(unit(id).pos));
          }
        }
      }
      else{
        if(D.size() < 50){
-         for(int i = 0; i < n/2; ++i){ //2ª tercera part dels dwarves busquen tresors. +3ª tercera pq no esta implementada encara
-           int id = K[i];
-
-           escape_balrog(unit(id).pos); //primer fugim del balrog si el tenim aprop
-
-           bool b = false;
-           Pos enem = check_enemics(unit(id).pos, b,2);
-           if(b and unit(cell(enem).id).type != Dwarf and unit(cell(enem).id).type != Wizard /*and unit(cell(enem).id).type != Orc*/)run_dwarve(id,enem); //fugim de les unitats de Sauron
-           // else if(unit(id).health <= 50){
-           //   move_dwarve(id,bfs_wizards(unit(id).pos));
-           // }
-           else {
-             move_dwarve(id,bfs_dw_enem(unit(id).pos));
-           }
-         }
-         for(int i = n/2; i < n; ++i){
-           int id = K[i];
-
-           escape_balrog(unit(id).pos); //primer fugim del balrog si el tenim aprop
-
-           bool b = false;
-           Pos enem = check_enemics(unit(id).pos, b,2);
-           if(b and unit(cell(enem).id).type != Dwarf and unit(cell(enem).id).type != Wizard /*and unit(cell(enem).id).type != Orc*/)run_dwarve(id,enem); //fugim de les unitats de Sauron
-           // else if(unit(id).health <= 50){
-           //   move_dwarve(id,bfs_wizards(unit(id).pos));
-           // }
-           else {
-             move_dwarve(id,dijkstra(unit(id).pos));
-           }
-         }
-       }
-       else{
          for(int i = 0; i < 2*n/3; ++i){ //2ª tercera part dels dwarves busquen tresors. +3ª tercera pq no esta implementada encara
            int id = K[i];
 
@@ -552,7 +522,43 @@ struct PLAYER_NAME : public Player {
            //   move_dwarve(id,bfs_wizards(unit(id).pos));
            // }
            else {
-             move_dwarve(id,dijkstra(unit(id).pos));
+             Pos aux = dijkstra(unit(id).pos);
+             if(pos_ok(aux)) move_dwarve(id,aux);
+             else move_dwarve(id,bfs_dw_enem(unit(id).pos));
+           }
+         }
+       }
+       else{
+         for(int i = 0; i < n/2; ++i){ //2ª tercera part dels dwarves busquen tresors. +3ª tercera pq no esta implementada encara
+           int id = K[i];
+
+           escape_balrog(unit(id).pos); //primer fugim del balrog si el tenim aprop
+
+           bool b = false;
+           Pos enem = check_enemics(unit(id).pos, b,2);
+           if(b and unit(cell(enem).id).type != Dwarf and unit(cell(enem).id).type != Wizard /*and unit(cell(enem).id).type != Orc*/)run_dwarve(id,enem); //fugim de les unitats de Sauron
+           // else if(unit(id).health <= 50){
+           //   move_dwarve(id,bfs_wizards(unit(id).pos));
+           // }
+           else {
+             move_dwarve(id,bfs_dw_enem(unit(id).pos));
+           }
+         }
+         for(int i = n/2; i < n; ++i){
+           int id = K[i];
+
+           escape_balrog(unit(id).pos); //primer fugim del balrog si el tenim aprop
+
+           bool b = false;
+           Pos enem = check_enemics(unit(id).pos, b,2);
+           if(b and unit(cell(enem).id).type != Dwarf and unit(cell(enem).id).type != Wizard /*and unit(cell(enem).id).type != Orc*/)run_dwarve(id,enem); //fugim de les unitats de Sauron
+           // else if(unit(id).health <= 50){
+           //   move_dwarve(id,bfs_wizards(unit(id).pos));
+           // }
+           else {
+             Pos aux = dijkstra(unit(id).pos);
+             if(pos_ok(aux)) move_dwarve(id,aux);
+             else move_dwarve(id,bfs_dw_enem(unit(id).pos));
            }
          }
        }
