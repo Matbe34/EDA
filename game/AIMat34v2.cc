@@ -5,7 +5,7 @@
  * Write the name of your player and save this file
  * with the same name and .cc extension.
  */
-#define PLAYER_NAME Mat34
+#define PLAYER_NAME Mat34v2
 
 
 struct PLAYER_NAME : public Player {
@@ -32,6 +32,7 @@ struct PLAYER_NAME : public Player {
    vector<Pos> tresors; //vector on estan les posicions dels tresors
    Pos obj_dwarve; //objectiu dels dwarves
    Pos obj_wizzard; //objectiu dels mags
+   vector<Pos> came_from;
 
    //retorna una posicio fet el moviment indicat: 0 = UP, 1 = RIGHT, 2 = DOWN, 3 = LEFT
    Pos mou(Pos a, int s){
@@ -76,11 +77,38 @@ struct PLAYER_NAME : public Player {
      else return 1e9;
    }
 
+   //retorna la cel·la enemiga mes propera
+   Pos bfs_cell(Pos a){
+     queue<Pos> q;
+     q.push(a);
+     set<Pos> visited;
+     while(not q.empty()){
+       Pos aux = q.front();q.pop();
+       visited.insert(aux);
+       if(pos_ok(aux) and (cell(aux).owner != me() and cell(aux).owner != -1) and cell(aux).type != Outside) return aux;
+       else {
+         if(pos_ok(mou(aux,0)) and visited.find(mou(aux,0)) == visited.end())q.push(aux);
+         if(pos_ok(mou(aux,1)) and visited.find(mou(aux,1)) == visited.end())q.push(aux);
+         if(pos_ok(mou(aux,2)) and visited.find(mou(aux,2)) == visited.end())q.push(aux);
+         if(pos_ok(mou(aux,3)) and visited.find(mou(aux,3)) == visited.end())q.push(aux);
+
+       }
+     }
+     return a;
+   }
+
+
+   Pos pos_next(Pos& current, Pos& a){
+     while(came_from[current.i*60+current.j] != a){
+       current = came_from[current.i*60+current.j];
+     }
+     return current;
+   }
    //retorna la posicio a la que ens hem de moure per apropar-nos al tresor més proper tenint en compte pesos
    Pos dijkstra(Pos a){
      priority_queue<pair<Pos,int> > q;
      q.push(make_pair(a,0));
-     vector<Pos> came_from(3600);
+     came_from = vector<Pos> (3600);
      came_from[a.i*60+a.j] = Pos(-1,-1);
      vector<int> cost(3600,1e9);
      cost[a.i*60+a.j] = 0;
@@ -91,9 +119,9 @@ struct PLAYER_NAME : public Player {
        q.pop();
 
        if(pos_ok(current) and cell(current).treasure){
-         break;
+         return pos_next(current,a);
        }
-       if(cost_cu == cost[current.i*60+current.j]){
+       if(pos_ok(current) and cost_cu == cost[current.i*60+current.j]){
          for(int i = 0; i < 4; ++i){
            Pos aux = neighbour(current,i);
            if(pos_ok(aux)){
@@ -246,7 +274,7 @@ struct PLAYER_NAME : public Player {
      else lim2 = 60;
      for(int p = i; p < lim1; ++p){
        for(int q = j; q < lim2; ++q){
-         if(cell(Pos(p,q)).id != -1 and not mine(cell(Pos(p,q)).id)){
+         if(pos_ok(Pos(p,q)) and cell(Pos(p,q)).id != -1 and not mine(cell(Pos(p,q)).id)){
            b = true;
            return Pos(p,q);
          }
@@ -269,7 +297,7 @@ struct PLAYER_NAME : public Player {
      int id = cell(a).id;
      for(int p = i; p < lim1; ++p){
        for(int q = j; q < lim2; ++q){
-         if(cell(Pos(p,q)).id == balrog_id()){
+         if(pos_ok(Pos(p,q)) and cell(Pos(p,q)).id == balrog_id()){
            if(unit(cell(a).id).type == Dwarf)run_dwarve(id,Pos(p,q));
            else run_wizzard(id,Pos(p,q));
          }
@@ -473,6 +501,7 @@ struct PLAYER_NAME : public Player {
    //Volem que la 1ª tercera part siguin caçadors, la 2ª busquin tresors i la 3ª marquin cel·les
    void move_dwarves(){
      vector<int> K = dwarves(me());
+     set<Pos> movs;
      int n = K.size();
      if(round() < 130){
        for(int i = 0; i < n; ++i){ //2ª tercera part dels dwarves busquen tresors. +3ª tercera pq no esta implementada encara
@@ -489,7 +518,7 @@ struct PLAYER_NAME : public Player {
          else {
            Pos aux = bfs_dw_enem(unit(id).pos);
            if(pos_ok(aux)) move_dwarve(id,aux);
-           else move_dwarve(id,dijkstra(unit(id).pos));
+           else move_dwarve(id,bfs_cell(unit(id).pos));
          }
        }
      }
@@ -522,9 +551,10 @@ struct PLAYER_NAME : public Player {
            //   move_dwarve(id,bfs_wizards(unit(id).pos));
            // }
            else {
-             Pos aux = dijkstra(unit(id).pos);
+             // Pos aux = dijkstra(unit(id).pos);
+             Pos aux = bfs_cell(unit(id).pos);
              if(pos_ok(aux)) move_dwarve(id,aux);
-             else move_dwarve(id,bfs_dw_enem(unit(id).pos));
+             else move_dwarve(id,bfs_cell(unit(id).pos));
            }
          }
        }
@@ -556,7 +586,8 @@ struct PLAYER_NAME : public Player {
            //   move_dwarve(id,bfs_wizards(unit(id).pos));
            // }
            else {
-             Pos aux = dijkstra(unit(id).pos);
+             // Pos aux = dijkstra(unit(id).pos);
+             Pos aux = bfs_cell(unit(id).pos);
              if(pos_ok(aux)) move_dwarve(id,aux);
              else move_dwarve(id,bfs_dw_enem(unit(id).pos));
            }
